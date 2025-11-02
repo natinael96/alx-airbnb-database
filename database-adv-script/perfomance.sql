@@ -5,6 +5,7 @@
 -- This version may have performance inefficiencies that will be identified and optimized
 
 -- Original Query: Retrieves all bookings with related user, property, and payment information
+-- This query may have performance issues when dealing with large datasets
 SELECT 
     b.booking_id,
     b.start_date,
@@ -42,10 +43,56 @@ INNER JOIN user u ON b.user_id = u.user_id
 INNER JOIN property p ON b.property_id = p.property_id
 INNER JOIN user h ON p.host_id = h.user_id
 LEFT JOIN payment pay ON b.booking_id = pay.booking_id
+WHERE b.status IN ('pending', 'confirmed') 
+  AND b.start_date >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR)
+  AND p.location IS NOT NULL
 ORDER BY b.created_at DESC;
 
 -- ============================================================================
--- EXPLAIN ANALYZE - Run this to analyze the initial query performance
+-- EXPLAIN - Run this to analyze the initial query performance
+-- ============================================================================
+-- Use EXPLAIN to see the execution plan without executing the query
+EXPLAIN
+SELECT 
+    b.booking_id,
+    b.start_date,
+    b.end_date,
+    b.total_price,
+    b.status,
+    b.created_at AS booking_created_at,
+    u.user_id,
+    u.first_name,
+    u.last_name,
+    u.email,
+    u.phone_number,
+    u.role,
+    u.created_at AS user_created_at,
+    p.property_id,
+    p.name AS property_name,
+    p.description,
+    p.location,
+    p.pricepernight,
+    p.created_at AS property_created_at,
+    h.user_id AS host_id,
+    h.first_name AS host_first_name,
+    h.last_name AS host_last_name,
+    h.email AS host_email,
+    pay.payment_id,
+    pay.amount AS payment_amount,
+    pay.payment_date,
+    pay.payment_method
+FROM booking b
+INNER JOIN user u ON b.user_id = u.user_id
+INNER JOIN property p ON b.property_id = p.property_id
+INNER JOIN user h ON p.host_id = h.user_id
+LEFT JOIN payment pay ON b.booking_id = pay.booking_id
+WHERE b.status IN ('pending', 'confirmed') 
+  AND b.start_date >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR)
+  AND p.location IS NOT NULL
+ORDER BY b.created_at DESC;
+
+-- ============================================================================
+-- EXPLAIN ANALYZE - Run this to analyze the initial query performance with actual execution
 -- ============================================================================
 /*
 EXPLAIN ANALYZE
@@ -82,6 +129,9 @@ INNER JOIN user u ON b.user_id = u.user_id
 INNER JOIN property p ON b.property_id = p.property_id
 INNER JOIN user h ON p.host_id = h.user_id
 LEFT JOIN payment pay ON b.booking_id = pay.booking_id
+WHERE b.status IN ('pending', 'confirmed') 
+  AND b.start_date >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR)
+  AND p.location IS NOT NULL
 ORDER BY b.created_at DESC;
 */
 
